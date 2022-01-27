@@ -1,0 +1,63 @@
+{
+  "$schema": "http://schema.management.azure.com/schemas/2014-04-01-preview/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "databaseName": {
+      "type": "string",
+      "defaultValue": ""
+    },
+    "serverName": {
+      "type": "string",
+      "defaultValue": ""
+    },
+    "adminPassword": {
+      "type": "securestring",
+      "defaultValue": ""
+    },   
+    "adminLogin": {
+      "type": "string",
+      "defaultValue": "sqladmin"
+    }
+  },
+  "resources": [
+    {
+      "apiVersion": "2014-04-01",
+      "location": "[resourceGroup().location]",
+      "name": "[parameters('serverName')]",
+      "properties": {
+        "administratorLogin": "[parameters('adminLogin')]",
+        "administratorLoginPassword": "[parameters('adminPassword')]",
+        "version": "12.0"
+      },
+      "type": "Microsoft.Sql/servers"
+    },  
+    {
+      "type": "Microsoft.Sql/servers/databases",
+      "apiVersion": "2021-02-01-preview",
+      "location": "[variables('location')]",
+      "name": "[concat(parameters('serverName'), '/', parameters('databaseName'))]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Sql/servers/', parameters('serverName'))]"
+      ],
+      "properties": {
+        "collation": "SQL_Latin1_General_CP1_CI_AS",
+        "maxSizeBytes": 34359738368,
+        "catalogCollation": "SQL_Latin1_General_CP1_CI_AS",
+        "readScale": "Disabled",
+        "autoPauseDelay": 60,
+        "requestedBackupStorageRedundancy": "Local",
+        "minCapacity": 0.5,        
+        "maintenanceConfigurationId": "[variables('maintenanceConfigurationId')]"
+      },
+      "sku": {
+        "name": "GP_S_Gen5_4",
+        "tier": "GeneralPurpose"
+      }
+    }
+  ],
+  "variables": {
+    "subscriptionId": "[subscription().subscriptionId]",
+    "maintenanceConfigurationId": "[concat('/subscriptions/',variables('subscriptionId'),'/providers/Microsoft.Maintenance/publicMaintenanceConfigurations/SQL_Default')]",
+    "location": "[resourceGroup().location]"
+  }
+}
